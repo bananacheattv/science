@@ -2,14 +2,14 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>BactéroQuest — Les Bactéries face aux Antibiotiques</title>
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet" />
 </head>
 <body>
 
-<!-- ===== ÉCRAN D'ACCUEIL ===== -->
+<!-- ══ ACCUEIL ══ -->
 <div id="screen-home" class="screen active">
   <div class="stars"></div>
   <div class="home-content">
@@ -18,21 +18,19 @@
     <p class="game-subtitle">Les Bactéries face aux Antibiotiques</p>
     <p class="game-desc">Un voyage scientifique dans le monde microscopique.<br>Explore, apprends, combats !</p>
     <button class="btn-primary" onclick="Game.startGame()">▶ COMMENCER L'AVENTURE</button>
-    <div class="credits">Basé sur le travail de Copinne Théo, Laith Al Mitani & Nathan Willemet</div>
+    <div class="credits">Copinne Théo · Laith Al Mitani · Nathan Willemet</div>
   </div>
 </div>
 
-<!-- ===== HUD ===== -->
+<!-- ══ HUD ══ -->
 <div id="hud" class="hidden">
   <div class="hud-left">
     <span class="hud-label">NIVEAU</span>
     <span id="hud-level">1</span>
   </div>
   <div class="hud-center">
-    <div class="progress-bar-wrapper">
-      <div id="progress-bar" class="progress-bar"></div>
-    </div>
-    <span id="progress-text">0 / 100</span>
+    <div class="progress-bar-wrapper"><div id="progress-bar" class="progress-bar"></div></div>
+    <span id="progress-text">0 / 50 XP</span>
   </div>
   <div class="hud-right">
     <span class="hud-label">SCORE</span>
@@ -40,27 +38,26 @@
   </div>
 </div>
 
-<!-- ===== NIVEAU 1 : Découverte des Bactéries ===== -->
+<!-- ══ NIVEAU 1 — Découverte ══ -->
 <div id="screen-level1" class="screen level-screen">
   <div class="level-header">
     <span class="level-badge">NIVEAU 1</span>
     <h2>Découverte des Bactéries</h2>
   </div>
   <div class="level-body">
-    <div class="info-panel">
-      <h3>🔬 Qu'est-ce qu'une bactérie ?</h3>
-      <p>Les bactéries sont des <span class="clickable-term" data-key="unicellulaire">organismes unicellulaires</span> — un seul être entier en une seule cellule ! Elles se divisent toutes les <strong>20 à 60 minutes</strong>. Une population peut atteindre <strong>plusieurs milliards</strong> en quelques heures.</p>
-      <p>Elles ont une <span class="clickable-term" data-key="paroi">paroi bactérienne</span> qui les protège et se reconstruit en permanence pour permettre leur réplication.</p>
-      <p>On distingue deux grandes formes : les <span class="clickable-term" data-key="coques">coques</span> (sphériques) et les <span class="clickable-term" data-key="bacilles">bacilles</span> (en bâtonnets).</p>
-      <div class="fact-box">💡 <strong>Le savais-tu ?</strong> Les bactéries existent depuis ~3,5 milliards d'années. Elles sont présentes partout : dans nos intestins, dans le sol, dans l'eau !</div>
-    </div>
     <div class="arena" id="arena1">
       <canvas id="canvas1" width="700" height="420"></canvas>
-      <div class="arena-instructions">Clique sur les bactéries pour les observer !</div>
+      <div class="arena-instructions">👆 Clique sur les bactéries pour les observer !</div>
+      <div id="info-popup" class="info-popup hidden">
+        <button class="popup-close" onclick="closePopup()">✕</button>
+        <div id="popup-content"></div>
+      </div>
     </div>
-    <div id="info-popup" class="info-popup hidden">
-      <button class="popup-close" onclick="closePopup()">✕</button>
-      <div id="popup-content"></div>
+    <div class="info-panel">
+      <h3>🔬 Qu'est-ce qu'une bactérie ?</h3>
+      <p>Les bactéries sont des <span class="ct" onclick="openTerm('unicellulaire')">organismes unicellulaires</span> — un seul être entier en une seule cellule ! Elles se divisent toutes les <strong>20 à 60 minutes</strong>.</p>
+      <p>Elles ont une <span class="ct" onclick="openTerm('paroi')">paroi bactérienne</span> qui les protège. Il existe des <span class="ct" onclick="openTerm('coques')">coques</span> (sphériques) et des <span class="ct" onclick="openTerm('bacilles')">bacilles</span> (en bâtonnet).</p>
+      <div class="fact-box">💡 Les bactéries existent depuis ~3,5 milliards d'années. Elles sont partout : intestins, sol, eau !</div>
     </div>
   </div>
   <div class="level-footer">
@@ -69,28 +66,28 @@
   </div>
 </div>
 
-<!-- ===== NIVEAU 2 : Multiplication ===== -->
+<!-- ══ NIVEAU 2 — Multiplication ══ -->
 <div id="screen-level2" class="screen level-screen">
   <div class="level-header">
     <span class="level-badge">NIVEAU 2</span>
     <h2>La Multiplication des Bactéries</h2>
   </div>
   <div class="level-body">
-    <div class="info-panel">
-      <h3>🧬 Comment se multiplient-elles ?</h3>
-      <p>Les bactéries se reproduisent par <span class="clickable-term" data-key="scissiparite">division cellulaire (scissiparité)</span>. Une bactérie devient deux, deux deviennent quatre… une <span class="clickable-term" data-key="exponentielle">croissance exponentielle</span> !</p>
-      <p>Lors de chaque division, il peut se produire des <span class="clickable-term" data-key="mutation">mutations spontanées</span> — des erreurs aléatoires dans l'ADN. La plupart sont neutres, mais certaines peuvent conférer un <strong>avantage de survie</strong>.</p>
-      <div class="fact-box">⚠️ Plus la population est grande, plus la probabilité de <strong>mutations aléatoires</strong> augmente — c'est la clé de l'évolution !</div>
-    </div>
     <div class="arena" id="arena2">
       <canvas id="canvas2" width="700" height="420"></canvas>
       <div class="arena-instructions">Appuie sur le bouton pour déclencher une division !</div>
     </div>
-    <div class="controls-row">
-      <button class="btn-action" onclick="Level2.divideBacteria()">🔬 Déclencher une division</button>
-      <button class="btn-action" onclick="Level2.reset()">↺ Réinitialiser</button>
-      <span id="division-count" class="counter">Divisions : 0</span>
+    <div class="info-panel">
+      <h3>🧬 Comment se multiplient-elles ?</h3>
+      <p>Les bactéries se reproduisent par <span class="ct" onclick="openTerm('scissiparite')">scissiparité</span> (division cellulaire). Une bactérie → deux, deux → quatre… une <span class="ct" onclick="openTerm('exponentielle')">croissance exponentielle</span> !</p>
+      <p>Lors de chaque division, des <span class="ct" onclick="openTerm('mutation')">mutations spontanées</span> peuvent se produire. Certaines confèrent un <strong>avantage de survie</strong>.</p>
+      <div class="fact-box">⚠️ Plus la population est grande, plus la probabilité de mutations augmente — c'est la clé de l'évolution !</div>
     </div>
+  </div>
+  <div class="controls-row">
+    <button class="btn-action" onclick="Level2.divideBacteria()">🔬 Déclencher une division</button>
+    <button class="btn-action" onclick="Level2.reset()">↺ Réinitialiser</button>
+    <span id="division-count" class="counter">Divisions : 0</span>
   </div>
   <div class="level-footer">
     <div class="xp-feedback">Observe au moins 4 divisions pour continuer</div>
@@ -98,33 +95,32 @@
   </div>
 </div>
 
-<!-- ===== NIVEAU 3 : Découverte des Antibiotiques ===== -->
+<!-- ══ NIVEAU 3 — Antibiotiques ══ -->
 <div id="screen-level3" class="screen level-screen">
   <div class="level-header">
     <span class="level-badge">NIVEAU 3</span>
     <h2>Découverte des Antibiotiques</h2>
   </div>
   <div class="level-body">
-    <div class="info-panel">
-      <h3>💊 Fleming et la Pénicilline</h3>
-      <p>En <strong>1928</strong>, Alexander Fleming observe qu'une moisissure (<em>Penicillium notatum</em>) empêche la croissance de bactéries. Il nomme cette substance : la <span class="clickable-term" data-key="penicilline">pénicilline</span>.</p>
-      <p>Un antibiotique peut agir de 2 façons :</p>
-      <ul>
-        <li><span class="clickable-term" data-key="bacteriostatique">Bactériostatique</span> : bloque la reproduction</li>
-        <li><span class="clickable-term" data-key="bactericide">Bactéricide</span> : tue la bactérie</li>
-      </ul>
-      <p>Les <span class="clickable-term" data-key="betalactamines">β-lactamines</span> (comme la pénicilline) ciblent la paroi bactérienne. Ils ont une <strong>toxicité sélective</strong> : ils n'affectent pas les cellules humaines !</p>
-      <div class="fact-box">🏆 Fleming, Florey et Chain ont reçu le <strong>Prix Nobel de Médecine en 1945</strong> pour cette découverte.</div>
-    </div>
     <div class="arena" id="arena3">
       <canvas id="canvas3" width="700" height="420"></canvas>
-      <div class="arena-instructions">Sélectionne le bon antibiotique, puis clique sur la bactérie !</div>
+      <div class="arena-instructions">Sélectionne un antibiotique, puis clique sur une bactérie !</div>
     </div>
-    <div class="controls-row">
-      <button class="btn-action" id="btn-bacteriostatique" onclick="Level3.selectWeapon('static')">🛡 Bactériostatique</button>
-      <button class="btn-action" id="btn-bactericide" onclick="Level3.selectWeapon('kill')">⚔️ Bactéricide</button>
-      <span id="weapon-selected" class="counter">Aucun sélectionné</span>
+    <div class="info-panel">
+      <h3>💊 Fleming et la Pénicilline</h3>
+      <p>En <strong>1928</strong>, Fleming découvre la <span class="ct" onclick="openTerm('penicilline')">pénicilline</span>. Un antibiotique agit de 2 façons :</p>
+      <ul>
+        <li><span class="ct" onclick="openTerm('bacteriostatique')">Bactériostatique</span> : bloque la reproduction</li>
+        <li><span class="ct" onclick="openTerm('bactericide')">Bactéricide</span> : tue la bactérie</li>
+      </ul>
+      <p>Les <span class="ct" onclick="openTerm('betalactamines')">β-lactamines</span> ciblent la <span class="ct" onclick="openTerm('paroi')">paroi bactérienne</span>. Elles ont une <strong>toxicité sélective</strong>.</p>
+      <div class="fact-box">🏆 Fleming, Florey et Chain reçoivent le <strong>Prix Nobel en 1945</strong>.</div>
     </div>
+  </div>
+  <div class="controls-row">
+    <button class="btn-action" id="btn-bstat" onclick="Level3.selectWeapon('static')">🛡 Bactériostatique</button>
+    <button class="btn-action" id="btn-bkill" onclick="Level3.selectWeapon('kill')">⚔️ Bactéricide</button>
+    <span id="weapon-selected" class="counter">Aucun sélectionné</span>
   </div>
   <div class="level-footer">
     <div class="xp-feedback">Traite 5 bactéries pour continuer</div>
@@ -132,128 +128,113 @@
   </div>
 </div>
 
-<!-- ===== NIVEAU 4 : L'Antibiogramme ===== -->
+<!-- ══ NIVEAU 4 — Antibiogramme ══ -->
 <div id="screen-level4" class="screen level-screen">
   <div class="level-header">
-    <span class="level-badge" style="background: linear-gradient(135deg,#00ff88,#00cfff)">NIVEAU 4</span>
+    <span class="level-badge">NIVEAU 4</span>
     <h2>L'Antibiogramme</h2>
   </div>
   <div class="level-body">
-    <div class="info-panel">
-      <h3>🧫 Lire un Antibiogramme</h3>
-      <p>Un <span class="clickable-term" data-key="antibiogramme">antibiogramme</span> est un test en laboratoire qui mesure la <strong>sensibilité d'une bactérie</strong> à différents antibiotiques.</p>
-      <p>On place des disques imprégnés d'antibiotiques sur une boîte de Petri où la bactérie a été ensemencée. Après 18–24h d'incubation, on mesure le <span class="clickable-term" data-key="zoneInhibition">diamètre de la zone d'inhibition</span> (zone sans croissance).</p>
-      <ul>
-        <li><span class="clickable-term" data-key="sensible">S (Sensible)</span> : la bactérie est tuée — antibiotique efficace ✅</li>
-        <li><span class="clickable-term" data-key="intermediate">I (Intermédiaire)</span> : efficacité partielle, doses élevées 🟡</li>
-        <li><span class="clickable-term" data-key="resistant">R (Résistant)</span> : antibiotique inefficace ❌</li>
-      </ul>
-      <div class="fact-box">🔬 <strong>CMI</strong> = Concentration Minimale Inhibitrice. C'est la plus petite concentration d'antibiotique qui bloque la croissance bactérienne. Un <span class="clickable-term" data-key="cmi">antibiogramme</span> permet de trouver le bon antibiotique pour chaque infection.</div>
-    </div>
     <div class="arena" id="arena4">
       <canvas id="canvas4" width="700" height="420"></canvas>
-      <div class="arena-instructions">Clique sur un disque antibiotique pour lire le résultat !</div>
+      <div class="arena-instructions">👆 Clique sur un disque pour voir la zone d'inhibition</div>
+    </div>
+    <!-- Panel info antibiogramme — non bloquant, dans le sidebar -->
+    <div id="bio-info-panel">
+      <h3>🧫 Antibiogramme</h3>
+      <p>Boîte de Petri avec disques d'<span class="ct" onclick="openTerm('antibiogramme')">antibiotiques</span>. La <span class="ct" onclick="openTerm('zoneInhibition')">zone d'inhibition</span> mesure l'efficacité.</p>
+      <p><strong>Catégories :</strong></p>
+      <p>🟢 <strong style="color:var(--green)">S</strong> = Sensible — traitement efficace<br>🟡 <strong style="color:var(--yellow)">I</strong> = Intermédiaire — dose élevée<br>🔴 <strong style="color:var(--red)">R</strong> = <span class="ct" onclick="openTerm('resistant')">Résistant</span> — inefficace</p>
+      <div id="bio-disc-details">
+        <p style="color:var(--dim);font-style:italic;font-size:11px">Clique un disque pour l'analyser →</p>
+      </div>
     </div>
   </div>
   <div class="level-footer">
-    <div class="xp-feedback" id="xp4-text">Identifie les antibiotiques efficaces (S) pour continuer</div>
+    <div class="xp-feedback">Analyse tous les disques pour débloquer la suite</div>
     <button class="btn-next" id="btn-next4" onclick="Game.nextLevel()" disabled>Niveau suivant ➜</button>
   </div>
 </div>
 
-<!-- ===== NIVEAU 5 : Résistance ===== -->
+<!-- ══ NIVEAU 5 — Résistance ══ -->
 <div id="screen-level5" class="screen level-screen">
   <div class="level-header">
     <span class="level-badge">NIVEAU 5</span>
     <h2>La Résistance aux Antibiotiques</h2>
   </div>
   <div class="level-body">
-    <div class="info-panel">
-      <h3>🦠 Comment les bactéries résistent-elles ?</h3>
-      <p>Sous la <span class="clickable-term" data-key="pressionSelection">pression de sélection</span> des antibiotiques, seules les bactéries <em>résistantes</em> survivent. Elles se multiplient et transmettent leurs gènes de résistance.</p>
-      <p>Mécanismes de résistance :</p>
-      <ul>
-        <li>Modification de la <span class="clickable-term" data-key="cibleAb">cible de l'antibiotique</span></li>
-        <li>Production d'enzymes (<span class="clickable-term" data-key="betalactamase">β-lactamases</span>) qui détruisent l'antibiotique</li>
-        <li>Diminution de la perméabilité de la paroi</li>
-        <li><span class="clickable-term" data-key="transfertHorizontal">Transfert horizontal de gènes</span> via plasmides</li>
-      </ul>
-      <div class="fact-box">⚠️ Le <span class="clickable-term" data-key="sarm">SARM</span> (Staphylocoque résistant à la méticilline) est apparu dès les années 1960 et cause des infections graves en milieu hospitalier.</div>
-    </div>
     <div class="arena" id="arena5">
       <canvas id="canvas5" width="700" height="420"></canvas>
-      <div class="arena-instructions">Rouge = résistante 🔴 | Verte = sensible 🟢 — Traite les sensibles !</div>
+      <div class="arena-instructions">Rouge = résistante 🔴 | Verte = sensible 🟢 — Lance un antibiotique !</div>
     </div>
-    <div class="controls-row">
-      <button class="btn-action" onclick="Level5.addAntibiotic()">💊 Lancer antibiotique</button>
-      <button class="btn-action" onclick="Level5.reset()">↺ Réinitialiser</button>
-      <span id="resistant-count" class="counter">Résistantes : 0</span>
+    <div class="info-panel">
+      <h3>🦠 Mécanismes de résistance</h3>
+      <p>Sous la <span class="ct" onclick="openTerm('pressionSelection')">pression de sélection</span>, seules les bactéries résistantes survivent et se multiplient.</p>
+      <ul>
+        <li>Modification de la <span class="ct" onclick="openTerm('cibleAb')">cible</span> de l'antibiotique</li>
+        <li>Production de <span class="ct" onclick="openTerm('betalactamase')">β-lactamases</span></li>
+        <li><span class="ct" onclick="openTerm('transfertH')">Transfert horizontal de gènes</span></li>
+      </ul>
+      <div class="fact-box">⚠️ Le <span class="ct" onclick="openTerm('sarm')">SARM</span> est apparu dès 1960. Il cause des infections graves en milieu hospitalier.</div>
     </div>
   </div>
+  <div class="controls-row">
+    <button class="btn-action" onclick="Level5.addAntibiotic()">💊 Lancer antibiotique</button>
+    <button class="btn-action" onclick="Level5.reset()">↺ Réinitialiser</button>
+    <span id="resistant-count" class="counter">Résistantes : 0</span>
+  </div>
   <div class="level-footer">
-    <div class="xp-feedback">Observe la sélection naturelle en action !</div>
+    <div class="xp-feedback">Observe 3 générations pour continuer</div>
     <button class="btn-next" id="btn-next5" onclick="Game.nextLevel()" disabled>Niveau suivant ➜</button>
   </div>
 </div>
 
-<!-- ===== NIVEAU 6 : Impact Mondial & Perspectives ===== -->
+<!-- ══ NIVEAU 6 — Impact mondial ══ -->
 <div id="screen-level6" class="screen level-screen">
   <div class="level-header">
     <span class="level-badge">NIVEAU 6</span>
-    <h2>Impact Mondial & Solutions</h2>
+    <h2>Impact Mondial &amp; Solutions</h2>
   </div>
   <div class="level-body two-cols">
     <div class="stats-grid">
       <div class="stat-card" onclick="Level6.revealStat(this)">
-        <div class="stat-icon">💀</div>
-        <div class="stat-value hidden-val">1,27 M</div>
-        <div class="stat-label">décès directs/an (OMS 2023)</div>
-        <div class="stat-hint">Clique pour révéler</div>
+        <div class="stat-icon">💀</div><div class="stat-value hidden-val">1,27 M</div>
+        <div class="stat-label">décès directs/an (OMS 2023)</div><div class="stat-hint">Clique pour révéler</div>
       </div>
       <div class="stat-card" onclick="Level6.revealStat(this)">
-        <div class="stat-icon">🔮</div>
-        <div class="stat-value hidden-val">10 M</div>
-        <div class="stat-label">décès prévus/an d'ici 2050</div>
-        <div class="stat-hint">Clique pour révéler</div>
+        <div class="stat-icon">🔮</div><div class="stat-value hidden-val">10 M</div>
+        <div class="stat-label">décès prévus/an d'ici 2050</div><div class="stat-hint">Clique pour révéler</div>
       </div>
       <div class="stat-card" onclick="Level6.revealStat(this)">
-        <div class="stat-icon">🇺🇸</div>
-        <div class="stat-value hidden-val">2,8 M</div>
-        <div class="stat-label">infections résistantes/an aux USA</div>
-        <div class="stat-hint">Clique pour révéler</div>
+        <div class="stat-icon">🇺🇸</div><div class="stat-value hidden-val">2,8 M</div>
+        <div class="stat-label">infections résistantes/an aux USA</div><div class="stat-hint">Clique pour révéler</div>
       </div>
       <div class="stat-card" onclick="Level6.revealStat(this)">
-        <div class="stat-icon">🇪🇺</div>
-        <div class="stat-value hidden-val">35 000</div>
-        <div class="stat-label">décès liés aux résistances en Europe/an</div>
-        <div class="stat-hint">Clique pour révéler</div>
+        <div class="stat-icon">🇪🇺</div><div class="stat-value hidden-val">35 000</div>
+        <div class="stat-label">décès liés aux résistances en Europe/an</div><div class="stat-hint">Clique pour révéler</div>
       </div>
       <div class="stat-card" onclick="Level6.revealStat(this)">
-        <div class="stat-icon">💰</div>
-        <div class="stat-value hidden-val">1 milliard $</div>
-        <div class="stat-label">coût pour développer 1 antibiotique</div>
-        <div class="stat-hint">Clique pour révéler</div>
+        <div class="stat-icon">💰</div><div class="stat-value hidden-val">1 Md $</div>
+        <div class="stat-label">coût pour développer 1 antibiotique</div><div class="stat-hint">Clique pour révéler</div>
       </div>
       <div class="stat-card" onclick="Level6.revealStat(this)">
-        <div class="stat-icon">⏱️</div>
-        <div class="stat-value hidden-val">> 10 ans</div>
-        <div class="stat-label">nécessaires pour créer un antibiotique</div>
-        <div class="stat-hint">Clique pour révéler</div>
+        <div class="stat-icon">⏱️</div><div class="stat-value hidden-val">> 10 ans</div>
+        <div class="stat-label">nécessaires pour créer un antibiotique</div><div class="stat-hint">Clique pour révéler</div>
       </div>
     </div>
     <div class="solutions-panel">
       <h3>🌍 Les Solutions</h3>
       <div class="solution-item" onclick="this.classList.toggle('open')">
         <div class="sol-title">💊 Antibiothérapie raisonnée</div>
-        <div class="sol-body">Prescrire le bon antibiotique, à la bonne dose, pour la bonne durée. L'<strong>antibiogramme</strong> guide le médecin vers le choix optimal. L'IA aide désormais à choisir le bon traitement.</div>
+        <div class="sol-body">Prescrire le bon antibiotique, à la bonne dose, pour la bonne durée. L'IA aide désormais les médecins à choisir le bon traitement.</div>
       </div>
       <div class="solution-item" onclick="this.classList.toggle('open')">
         <div class="sol-title">🦠 Phagothérapie</div>
-        <div class="sol-body">Utiliser des virus (bactériophages) pour détruire les superbactéries. Inventée en 1917, elle connaît un regain d'intérêt. La Belgique et la France l'utilisent en dernier recours.</div>
+        <div class="sol-body">Utiliser des virus (bactériophages) pour détruire les superbactéries. Inventée en 1917, la Belgique et la France l'utilisent en dernier recours.</div>
       </div>
       <div class="solution-item" onclick="this.classList.toggle('open')">
         <div class="sol-title">🤖 Intelligence Artificielle</div>
-        <div class="sol-body">En 2025, l'IA a permis la découverte de la <em>lariocidine</em> et de deux nouveaux antibiotiques (contre la gonorrhée et le SARM).</div>
+        <div class="sol-body">En 2025, l'IA a permis la découverte de la lariocidine et de deux nouveaux antibiotiques contre la gonorrhée et le SARM.</div>
       </div>
       <div class="solution-item" onclick="this.classList.toggle('open')">
         <div class="sol-title">💉 Vaccination</div>
@@ -261,80 +242,34 @@
       </div>
       <div class="solution-item" onclick="this.classList.toggle('open')">
         <div class="sol-title">🌐 Plan "One Health"</div>
-        <div class="sol-body">Belgique : un plan de 260 millions € (2026–2030) qui relie santé humaine, animale et environnementale.</div>
+        <div class="sol-body">Belgique : un plan de 260 millions € (2026–2030) liant santé humaine, animale et environnementale.</div>
       </div>
     </div>
   </div>
   <div class="level-footer">
     <div class="xp-feedback">Révèle toutes les statistiques pour continuer</div>
-    <button class="btn-next" id="btn-next6" onclick="Game.goQuizSelect()" disabled>Passer au Quiz Final ➜</button>
+    <button class="btn-next" id="btn-next6" onclick="Game.goQuiz()" disabled>Passer au Quiz Final ➜</button>
   </div>
 </div>
 
-<!-- ===== SÉLECTION DIFFICULTÉ QUIZ ===== -->
-<div id="screen-difficulty" class="screen">
-  <div class="diff-container">
-    <div class="diff-header">
-      <div class="trophy-small">🎯</div>
-      <h2>Quiz Final — Choisis ta difficulté</h2>
-      <p class="diff-subtitle">Le niveau détermine les questions qui te seront posées</p>
-    </div>
-    <div class="diff-cards">
-      <div class="diff-card facile" onclick="Game.selectDifficulty('facile')">
-        <div class="diff-icon">🌱</div>
-        <div class="diff-name">FACILE</div>
-        <div class="diff-desc">Questions de base sur les bactéries et antibiotiques. Parfait pour débuter !</div>
-        <div class="diff-xp">+10 XP / bonne réponse</div>
-      </div>
-      <div class="diff-card moyen" onclick="Game.selectDifficulty('moyen')">
-        <div class="diff-icon">⚗️</div>
-        <div class="diff-name">MOYEN</div>
-        <div class="diff-desc">Concepts intermédiaires : résistance, antibiogramme, mécanismes d'action.</div>
-        <div class="diff-xp">+20 XP / bonne réponse</div>
-      </div>
-      <div class="diff-card difficile" onclick="Game.selectDifficulty('difficile')">
-        <div class="diff-icon">💀</div>
-        <div class="diff-name">DIFFICILE</div>
-        <div class="diff-desc">Questions expertes : CMI, β-lactamases, One Health, données chiffrées précises.</div>
-        <div class="diff-xp">+30 XP / bonne réponse</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ===== TIRAGE AU SORT ===== -->
-<div id="screen-draw" class="screen">
-  <div class="draw-container">
-    <h2>Tirage au sort des questions…</h2>
-    <div class="slot-machine">
-      <div class="slot-reel" id="slot-reel">🦠</div>
-    </div>
-    <div id="draw-result" class="draw-result hidden"></div>
-  </div>
-</div>
-
-<!-- ===== QUIZ FINAL ===== -->
+<!-- ══ QUIZ ══ -->
 <div id="screen-quiz" class="screen">
   <div class="level-header">
     <span class="level-badge quiz-badge">QUIZ FINAL</span>
-    <h2 id="quiz-difficulty-label">Questions — Niveau Moyen</h2>
+    <h2>Teste tes Connaissances !</h2>
   </div>
   <div id="quiz-container">
     <div id="question-area"></div>
     <div id="answer-area"></div>
     <div id="feedback-area"></div>
-    <div id="explanation-area" class="explanation-box hidden"></div>
-    <button id="btn-next-question" class="btn-next hidden" onclick="Quiz.nextQuestion()">Question suivante ➜</button>
   </div>
   <div class="quiz-progress">
-    <span id="quiz-progress-text">Question 1 / 8</span>
-    <div class="progress-bar-wrapper">
-      <div id="quiz-progress-bar" class="progress-bar"></div>
-    </div>
+    <span id="quiz-progress-text">Question 1 / 10</span>
+    <div class="progress-bar-wrapper"><div id="quiz-progress-bar" class="progress-bar"></div></div>
   </div>
 </div>
 
-<!-- ===== ÉCRAN DE FIN ===== -->
+<!-- ══ FIN ══ -->
 <div id="screen-end" class="screen">
   <div class="end-content">
     <div class="trophy">🏆</div>
@@ -343,22 +278,14 @@
     <div class="end-score-box">
       <div class="end-score-label">Score Final</div>
       <div id="end-score" class="end-score-value">0</div>
-      <div id="end-rank" class="end-rank">Rang : Scientifique Junior</div>
+      <div id="end-rank" class="end-rank"></div>
     </div>
     <p class="end-message" id="end-message"></p>
     <button class="btn-primary" onclick="Game.restart()">↺ Rejouer</button>
   </div>
 </div>
 
-<!-- ===== MODAL TERME CLIQUABLE ===== -->
-<div id="term-modal" class="term-modal hidden">
-  <div class="term-modal-box">
-    <button class="popup-close" onclick="closeTerm()">✕</button>
-    <div id="term-modal-content"></div>
-  </div>
-</div>
-
-<!-- ===== NAVIGATION DES NIVEAUX ===== -->
+<!-- ══ NAV ══ -->
 <nav id="level-nav" class="hidden">
   <button class="nav-btn" id="nav1" onclick="Game.goToLevel(1)">1</button>
   <button class="nav-btn" id="nav2" onclick="Game.goToLevel(2)">2</button>
@@ -366,10 +293,17 @@
   <button class="nav-btn" id="nav4" onclick="Game.goToLevel(4)">4</button>
   <button class="nav-btn" id="nav5" onclick="Game.goToLevel(5)">5</button>
   <button class="nav-btn" id="nav6" onclick="Game.goToLevel(6)">6</button>
-  <button class="nav-btn" id="navQ" onclick="Game.goQuizSelect()">Q</button>
+  <button class="nav-btn" id="navQ" onclick="Game.goQuiz()">Q</button>
 </nav>
+
+<!-- ══ TERM MODAL ══ -->
+<div id="term-modal" class="term-modal hidden">
+  <div class="term-modal-box">
+    <button class="term-modal-close" onclick="closeTerm()">✕</button>
+    <div id="term-modal-content"></div>
+  </div>
+</div>
 
 <script src="script.js"></script>
 </body>
 </html>
-
