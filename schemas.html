@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BactéroQuest — Gestionnaire de Schémas</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:#060b1a; --bg2:#0d1b35; --blue:#00cfff; --green:#00ff88;
+      --purple:#9b5de5; --red:#ff4d6d; --yellow:#ffd60a; --text:#e0f0ff;
+      --dim:#7a9cbf; --border:rgba(0,207,255,0.22);
+      --fd:'Orbitron',monospace; --fb:'Exo 2',sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh;padding:24px clamp(16px,5vw,48px);}
+    h1{font-family:var(--fd);color:var(--blue);font-size:clamp(18px,4vw,28px);margin-bottom:6px;letter-spacing:2px}
+    .subtitle{color:var(--dim);font-size:13px;margin-bottom:28px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px;}
+    .card{background:rgba(8,20,50,.9);border:1px solid var(--border);border-radius:12px;padding:18px;transition:border-color .2s}
+    .card:hover{border-color:var(--blue)}
+    .card-title{font-family:var(--fd);font-size:12px;color:var(--blue);letter-spacing:1px;margin-bottom:10px}
+    .card-key{font-size:11px;color:var(--dim);margin-bottom:12px;font-style:italic}
+    .preview{width:100%;height:140px;object-fit:contain;border-radius:8px;background:rgba(0,0,0,.4);border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;margin-bottom:12px;overflow:hidden;cursor:pointer;position:relative}
+    .preview img{width:100%;height:100%;object-fit:contain;border-radius:8px}
+    .preview .placeholder{color:var(--dim);font-size:12px;text-align:center;padding:8px;line-height:1.6;pointer-events:none}
+    .preview .overlay{position:absolute;inset:0;background:rgba(0,207,255,.1);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;border-radius:8px}
+    .preview:hover .overlay{opacity:1}
+    .overlay-text{color:#fff;font-size:12px;font-weight:600;background:rgba(0,0,0,.6);padding:6px 12px;border-radius:6px}
+    input[type=file]{display:none}
+    .btn{border:none;border-radius:8px;padding:8px 14px;font-family:var(--fb);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+    .btn-upload{background:rgba(0,207,255,.12);color:var(--blue);border:1px solid rgba(0,207,255,.4)}
+    .btn-upload:hover{background:rgba(0,207,255,.25)}
+    .btn-remove{background:rgba(255,77,109,.1);color:var(--red);border:1px solid rgba(255,77,109,.3)}
+    .btn-remove:hover{background:rgba(255,77,109,.25)}
+    .btn-row{display:flex;gap:8px;flex-wrap:wrap}
+    .status{font-size:11px;margin-top:8px;min-height:16px}
+    .status.ok{color:var(--green)} .status.err{color:var(--red)}
+    .header-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+    .btn-save-all{background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff;padding:10px 24px;font-family:var(--fd);font-size:12px;letter-spacing:1px;border-radius:30px;box-shadow:0 0 20px rgba(0,207,255,.3)}
+    .btn-save-all:hover{box-shadow:0 0 30px rgba(0,207,255,.5)}
+    .info-box{background:rgba(155,93,229,.1);border-left:3px solid var(--purple);padding:12px 16px;border-radius:0 8px 8px 0;font-size:12px;color:var(--text);line-height:1.7;margin-bottom:24px}
+    .back-link{color:var(--blue);text-decoration:none;font-size:13px;font-family:var(--fd);letter-spacing:1px}
+    .back-link:hover{color:var(--green)}
+    ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-track{background:rgba(0,0,0,.2)} ::-webkit-scrollbar-thumb{background:rgba(0,207,255,.3);border-radius:4px}
+  </style>
+</head>
+<body>
+
+<div class="header-bar">
+  <div>
+    <h1>🖼 GESTIONNAIRE DE SCHÉMAS</h1>
+    <p class="subtitle">Ajoute des images/schémas aux termes cliquables du jeu</p>
+  </div>
+  <a href="index.html" class="back-link">← Retour au jeu</a>
+</div>
+
+<div class="info-box">
+  📌 <strong>Comment ça marche :</strong> clique sur une carte pour importer une image (PNG, JPG, SVG, GIF). Elle s'affichera dans la fenêtre du terme cliquable (textes verts) directement dans le jeu. Les images sont stockées localement dans le navigateur.<br>
+  💡 <strong>Conseil :</strong> utilise des schémas clairs, fond blanc ou transparent, résolution ≥ 400px de large. SVG recommandé pour la netteté sur écran tactile.<br>
+  ⚠️ Les données sont sauvegardées dans <em>localStorage</em> du navigateur — les images restent tant qu'on ne vide pas le cache.
+</div>
+
+<button class="btn btn-save-all" onclick="saveAll()">💾 SAUVEGARDER TOUS LES CHANGEMENTS</button>
+<div id="save-status" style="margin-top:8px;font-size:12px;min-height:16px"></div>
+
+<br><br>
+
+<div class="grid" id="terms-grid"></div>
+
+<script>
+const TERM_LABELS = {
+  unicellulaire:  { title:'🦠 Organisme Unicellulaire',      hint:'Comparaison humain vs bactérie' },
+  paroi:          { title:'🏰 Paroi Bactérienne',             hint:'Structure couche peptidoglycane' },
+  coques:         { title:'⚪ Les Coques',                    hint:'Formes : mono, diplo, strepto, staphylo' },
+  bacilles:       { title:'🔴 Les Bacilles',                  hint:'Formes bâtonnet, flagelles, spores' },
+  scissiparite:   { title:'✂️ Scissiparité',                  hint:'Schéma division binaire : 1→2→4' },
+  exponentielle:  { title:'📈 Croissance Exponentielle',      hint:'Courbe ou tableau de croissance' },
+  mutation:       { title:'🧬 Mutation Génétique',            hint:'Séquence ADN avant/après mutation' },
+  penicilline:    { title:'💊 La Pénicilline',                hint:'Moisissure Penicillium / structure' },
+  bacteriostatique:{ title:'🛡 Bactériostatique',             hint:'Schéma bactérie bloquée' },
+  bactericide:    { title:'⚔️ Bactéricide',                   hint:'Schéma bactérie détruite' },
+  betalactamines: { title:'🔬 β-Lactamines',                  hint:'Cycle β-lactame, structure moléculaire' },
+  antibiogramme:  { title:'🧫 Antibiogramme',                 hint:'Photo boîte de Pétri réelle' },
+  zoneInhibition: { title:'⭕ Zone d\'Inhibition',            hint:'Mesure du diamètre, catégories S/I/R' },
+  resistant:      { title:'🔴 Résistance Bactérienne',        hint:'Mécanismes : pompe, enzyme, mutation' },
+  pressionSelection:{ title:'🎯 Pression de Sélection',       hint:'Courbe : avant/après antibiotique' },
+  cibleAb:        { title:'🎯 Cibles des Antibiotiques',      hint:'Tableau ou schéma des cibles' },
+  betalactamase:  { title:'🧪 β-Lactamases',                  hint:'Enzyme découpant le cycle β-lactame' },
+  transfertH:     { title:'🔄 Transfert Horizontal',          hint:'3 mécanismes : conjugaison/transfo/transduction' },
+  sarm:           { title:'⚠️ Le SARM',                       hint:'Frise chronologique résistances' },
+};
+
+let images = {};
+
+function loadSaved() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('bq_terms_override') || '{}');
+    for(const k in saved) if(saved[k].image) images[k] = saved[k].image;
+  } catch(e){}
+}
+
+function buildGrid() {
+  loadSaved();
+  const grid = document.getElementById('terms-grid');
+  grid.innerHTML = '';
+  for(const [key, meta] of Object.entries(TERM_LABELS)) {
+    const hasImg = !!images[key];
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-title">${meta.title}</div>
+      <div class="card-key">Clé : <code style="color:var(--yellow)">${key}</code></div>
+      <div class="preview" id="prev-${key}" onclick="triggerUpload('${key}')">
+        ${hasImg ? `<img src="${images[key]}" alt="${meta.title}" id="img-${key}">` : `<div class="placeholder">📷 Clique pour importer<br><small style="color:var(--blue)">${meta.hint}</small></div>`}
+        <div class="overlay"><span class="overlay-text">📂 Importer image</span></div>
+      </div>
+      <input type="file" id="file-${key}" accept="image/*" onchange="handleFile('${key}', this)">
+      <div class="btn-row">
+        <button class="btn btn-upload" onclick="triggerUpload('${key}')">📂 Importer</button>
+        ${hasImg ? `<button class="btn btn-remove" onclick="removeImage('${key}')">🗑 Supprimer</button>` : ''}
+      </div>
+      <div class="status" id="st-${key}">${hasImg ? '✅ Image présente' : ''}</div>`;
+    grid.appendChild(card);
+  }
+}
+
+function triggerUpload(key) {
+  document.getElementById('file-'+key).click();
+}
+
+function handleFile(key, input) {
+  const file = input.files[0];
+  if(!file) return;
+  if(file.size > 2*1024*1024) {
+    document.getElementById('st-'+key).className='status err';
+    document.getElementById('st-'+key).textContent='⚠️ Image trop lourde (max 2 Mo)';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    images[key] = e.target.result;
+    document.getElementById('st-'+key).className='status ok';
+    document.getElementById('st-'+key).textContent='✅ Image chargée — sauvegarde pour appliquer';
+    // Update preview
+    const prev = document.getElementById('prev-'+key);
+    prev.innerHTML = `<img src="${e.target.result}" alt="${key}" id="img-${key}"><div class="overlay"><span class="overlay-text">📂 Changer</span></div>`;
+    // Add remove button if not present
+    const btnRow = prev.nextElementSibling.nextElementSibling;
+    if(!btnRow.querySelector('.btn-remove')) {
+      const rem = document.createElement('button');
+      rem.className='btn btn-remove'; rem.textContent='🗑 Supprimer';
+      rem.onclick = () => removeImage(key);
+      btnRow.appendChild(rem);
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeImage(key) {
+  delete images[key];
+  document.getElementById('st-'+key).className='status';
+  document.getElementById('st-'+key).textContent='Image supprimée — sauvegarde pour appliquer';
+  buildGrid();
+}
+
+function saveAll() {
+  try {
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem('bq_terms_override') || '{}'); } catch(e){}
+    // Update image fields
+    for(const k in TERM_LABELS) {
+      if(images[k]) {
+        if(!saved[k]) saved[k]={};
+        saved[k].image = images[k];
+      } else if(saved[k]) {
+        delete saved[k].image;
+      }
+    }
+    localStorage.setItem('bq_terms_override', JSON.stringify(saved));
+    const st = document.getElementById('save-status');
+    st.style.color='var(--green)';
+    const n = Object.keys(images).length;
+    st.textContent = `✅ Sauvegardé ! ${n} image(s) enregistrée(s). Ouvre le jeu pour voir les changements.`;
+    setTimeout(()=>{ st.textContent=''; },4000);
+  } catch(e) {
+    document.getElementById('save-status').style.color='var(--red)';
+    document.getElementById('save-status').textContent = '❌ Erreur : ' + e.message;
+  }
+}
+
+buildGrid();
+</script>
+
+</body>
+</html>
