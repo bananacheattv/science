@@ -236,7 +236,12 @@ function openTerm(key) {
   const terms = getTerms();
   const term = terms[key];
   if (!term) return;
-  document.getElementById('term-modal-content').innerHTML = `<h3>${term.title}</h3>${term.content}`;
+  // Support image field: term.image = URL or base64 data URI
+  let imgHtml = '';
+  if (term.image) {
+    imgHtml = `<div style="margin-top:10px"><img src="${term.image}" alt="Schéma : ${term.title}" class="schema-img" onerror="this.style.display='none'" /></div>`;
+  }
+  document.getElementById('term-modal-content').innerHTML = `<h3>${term.title}</h3>${term.content}${imgHtml}`;
   document.getElementById('term-modal').classList.remove('hidden');
 }
 function closeTerm() { document.getElementById('term-modal').classList.add('hidden'); }
@@ -312,7 +317,7 @@ const Game = {
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('nav'+id)?.classList.add('active');
   },
-  showEnd(qs, total) {
+  showEnd(qs, total, difficulty) {
     this.showScreen('screen-end');
     document.getElementById('hud').classList.add('hidden');
     document.getElementById('end-score').textContent = this.score;
@@ -320,8 +325,9 @@ const Game = {
     const msg  = qs>=8 ? 'Impressionnant ! Tu maîtrises parfaitement les mécanismes de résistance bactérienne.'
                 : qs>=5 ? 'Très bien ! Tu comprends les grandes lignes. Continue à approfondir !'
                 : 'Bon début ! Relis les niveaux pour mieux comprendre les mécanismes.';
+    const cfg = difficulty ? DIFFICULTY_CONFIG[difficulty] : { emoji:'🎯', label:'STANDARD', color:'#00cfff' };
     document.getElementById('end-rank').textContent = rank;
-    document.getElementById('end-message').textContent = msg + '\n\nQuiz : '+qs+'/'+total+' bonnes réponses.';
+    document.getElementById('end-message').textContent = msg + '\n\nQuiz ' + cfg.emoji + ' ' + cfg.label + ' : '+qs+'/'+total+' bonnes réponses.';
   },
   restart() {
     this.score = 0; this.currentLevel = 0; this.unlockedLevels = [1];
@@ -772,40 +778,248 @@ const Level6 = {
 };
 
 // ══════════════════════════════════════════════════════════════
-// QUIZ FINAL
+// QUIZ FINAL — 3 niveaux de difficulté + roue animée
 // ══════════════════════════════════════════════════════════════
-const Quiz = {
-  questions:[
-    { q:"En quelle année Alexander Fleming a-t-il découvert la pénicilline ?", answers:["1905","1928","1945","1963"], correct:1, explanation:"Fleming observe en 1928 que Penicillium notatum empêche la croissance de Staphylococcus aureus." },
-    { q:"Quelle est la différence entre bactéricide et bactériostatique ?", answers:["Naturel vs synthétique","Le bactéricide tue, le bactériostatique bloque la reproduction","Le bactéricide est plus cher","Il n'y a pas de différence"], correct:1, explanation:"Bactéricide = tue la bactérie. Bactériostatique = bloque sa reproduction. Deux modes d'action complémentaires." },
-    { q:"Combien de décès directs/an dans le monde (OMS 2023) liés aux résistances ?", answers:["127 000","500 000","1,27 million","10 millions"], correct:2, explanation:"L'OMS estime 1,27 million de décès directs/an. Sans action, 10 millions d'ici 2050." },
-    { q:"Qu'est-ce que le transfert horizontal de gènes ?", answers:["Échange d'ADN entre bactéries","Mutation sous effet d'antibiotique","Reproduction par division","Mécanisme immunitaire"], correct:0, explanation:"Le transfert horizontal permet aux bactéries d'échanger des gènes de résistance via conjugaison, transformation ou transduction." },
-    { q:"Qu'est-ce qu'une bactérie multirésistante (BMR) ?", answers:["Résiste à la chaleur","Résiste à plusieurs familles d'antibiotiques","Plus grande que les autres","Ne peut pas se reproduire"], correct:1, explanation:"Une BMR résiste à plusieurs familles d'antibiotiques simultanément. Ex : SARM, Pseudomonas aeruginosa." },
-    { q:"Que signifie SARM ?", answers:["Super Antibiotique Résistant Médicalement","Staphylococcus aureus Résistant à la Méticilline","Syndrome Aigu de Résistance Microbienne","Système Antibactérien Résistant Mutant"], correct:1, explanation:"Le SARM est apparu en 1961 et cause des infections graves en milieu hospitalier. Traitement : vancomycine." },
-    { q:"La phagothérapie utilise :", answers:["Des plantes médicinales","Des virus bactériophages","Des antibiotiques renforcés","Des nanoparticules"], correct:1, explanation:"Inventée en 1917, la phagothérapie utilise des virus (bactériophages) pour détruire les bactéries. Utilisée en dernier recours en Belgique et France." },
-    { q:"L'approche 'One Health' nécessite une action sur :", answers:["La santé humaine uniquement","Les hôpitaux uniquement","Santé humaine, animale ET environnementale","La recherche pharmaceutique uniquement"], correct:2, explanation:"One Health relie santé humaine, animale et environnementale. La Belgique a lancé un plan de 260 millions € sur cette base." },
-    { q:"Pourquoi peu d'investissement pharmaceutique dans les nouveaux antibiotiques ?", answers:["Techniquement impossible","Faible rentabilité vs médicaments chroniques","Les gouvernements l'interdisent","Toutes les bactéries ont déjà des traitements"], correct:1, explanation:"Les antibiotiques sont pris sur de courtes périodes. Rentabilité faible comparée aux traitements chroniques (cancer, diabète)." },
-    { q:"Quelle découverte IA a eu lieu en 2025 contre les superbactéries ?", answers:["Un vaccin universel","La lariocidine, un nouvel antibiotique","Un robot médical","Un test ADN instantané"], correct:1, explanation:"En 2025, l'IA a permis la découverte de la lariocidine, efficace contre des superbactéries quasi intraitables." }
+
+const QUIZ_BANKS = {
+  facile: [
+    { q:"En quelle année Fleming a-t-il découvert la pénicilline ?", answers:["1905","1928","1945","1970"], correct:1, explanation:"En 1928, Fleming observe que Penicillium notatum empêche la croissance de Staphylococcus aureus." },
+    { q:"Que fait un antibiotique bactéricide ?", answers:["Bloque la reproduction","Tue directement la bactérie","Renforce l'immunité","Neutralise les virus"], correct:1, explanation:"Bactéricide = tue la bactérie. Bactériostatique = bloque sa reproduction." },
+    { q:"Les antibiotiques sont-ils efficaces contre les virus ?", answers:["Oui, toujours","Non, jamais","Parfois","Seulement en hiver"], correct:1, explanation:"Les antibiotiques n'agissent que sur les bactéries, jamais sur les virus comme la grippe ou le rhume." },
+    { q:"Quelle est la cible principale des β-lactamines ?", answers:["L'ADN bactérien","La paroi bactérienne","Les ribosomes","La membrane cellulaire"], correct:1, explanation:"Les β-lactamines bloquent la synthèse du peptidoglycane qui compose la paroi bactérienne." },
+    { q:"SARM signifie :", answers:["Super Antibiotique Résistant","Staphylococcus aureus Résistant à la Méticilline","Syndrome Aigu de Résistance","Système de Résistance Mutant"], correct:1, explanation:"Le SARM est apparu dès 1961, résiste à toutes les pénicillines classiques." },
+    { q:"Combien de décès directs/an dans le monde sont liés aux résistances (OMS 2023) ?", answers:["127 000","1,27 million","10 millions","35 000"], correct:1, explanation:"L'OMS estime 1,27 million de décès directs/an. Sans action, 10 millions d'ici 2050." },
+    { q:"La phagothérapie utilise :", answers:["Des plantes médicinales","Des virus bactériophages","Des antibiotiques renforcés","Des nanoparticules"], correct:1, explanation:"Inventée en 1917, la phagothérapie utilise des bactériophages — des virus qui détruisent les bactéries." },
+    { q:"Qu'est-ce qu'une bactérie multirésistante (BMR) ?", answers:["Résiste à la chaleur","Résiste à plusieurs familles d'antibiotiques","Plus grande que les autres","Ne se reproduit pas"], correct:1, explanation:"Une BMR résiste à plusieurs familles d'antibiotiques simultanément. Ex : SARM, Pseudomonas aeruginosa." },
+    { q:"L'approche 'One Health' relie :", answers:["Hôpitaux et pharmacies","Santé humaine, animale et environnementale","Médecins et vétérinaires","OMS et ONU"], correct:1, explanation:"One Health relie santé humaine, animale et environnementale. La Belgique a lancé un plan de 260 M€ sur cette base." },
+    { q:"Les bactéries se divisent environ toutes les :", answers:["2 à 5 heures","20 à 60 minutes","24 heures","1 semaine"], correct:1, explanation:"Certaines espèces se divisent toutes les 20 minutes ! Une bactérie peut devenir 1 milliard en 10h." }
   ],
-  current:0, score:0, answered:false,
-  start() { this.current=0; this.score=0; this.answered=false; this.showQ(); },
+  moyen: [
+    { q:"Qu'est-ce que le transfert horizontal de gènes ?", answers:["Échange d'ADN entre bactéries","Mutation sous effet d'un antibiotique","Reproduction par division","Mécanisme immunitaire humain"], correct:0, explanation:"Le THG permet aux bactéries d'échanger des gènes de résistance via conjugaison, transformation ou transduction." },
+    { q:"Quel mécanisme rend une bactérie résistante aux β-lactamines ?", answers:["Mutation de l'ADN gyrase","Production de β-lactamases","Épaississement de la membrane","Augmentation de la reproduction"], correct:1, explanation:"Les β-lactamases sont des enzymes qui coupent le noyau β-lactame de l'antibiotique, le rendant inactif." },
+    { q:"Pourquoi peu d'investissement pharma dans les antibiotiques ?", answers:["Techniquement impossible","Faible rentabilité vs médicaments chroniques","Interdiction gouvernementale","Brevets expirés"], correct:1, explanation:"Les antibiotiques sont pris sur de courtes durées. Rentabilité faible vs traitements chroniques (cancer, diabète). Coût : ~1 Md $ pour 1 antibiotique." },
+    { q:"Quelle découverte IA a eu lieu en 2025 contre les superbactéries ?", answers:["Un vaccin universel","La lariocidine","Un robot chirurgical","Un test ADN rapide"], correct:1, explanation:"En 2025, l'IA a permis la découverte de la lariocidine, efficace contre des superbactéries quasi intraitables." },
+    { q:"Que signifie la zone 'R' sur un antibiogramme ?", answers:["Rapide à traiter","Résistant : l'antibiotique est inefficace","Rare : peu de bactéries","Régulier : dose standard"], correct:1, explanation:"R = Résistant signifie que l'antibiotique ne peut pas éliminer cette bactérie aux concentrations normales." },
+    { q:"Comment les animaux d'élevage contribuent-ils à l'antibiorésistance ?", answers:["Ils consomment des médicaments humains","Les antibiotiques utilisés créent des bactéries résistantes transmissibles à l'homme","Ils produisent des antibiotiques naturels","Ils n'y contribuent pas"], correct:1, explanation:"Des bactéries résistantes comme Salmonella ou E. coli ont été retrouvées dans la chaîne alimentaire, issues d'élevages intensifs." },
+    { q:"Dès quelle année Fleming a-t-il mis en garde contre la résistance ?", answers:["1928","1945","1960","1980"], correct:1, explanation:"Dans son discours du Prix Nobel en 1945, Fleming alerte déjà sur les dangers d'une mauvaise utilisation de la pénicilline." },
+    { q:"Les vaccins contre 23 agents pathogènes pourraient réduire les doses d'antibiotiques de :", answers:["5 %","12 %","22 %","50 %"], correct:2, explanation:"Selon un rapport OMS, les vaccins contre 23 agents pathogènes peuvent réduire de 22% les doses d'antibiotiques nécessaires dans le monde." },
+    { q:"Qu'est-ce que la scissiparité ?", answers:["Mode d'alimentation","Division bactérienne en deux cellules filles","Échange de plasmides","Mécanisme de résistance"], correct:1, explanation:"La scissiparité (fission binaire) est le mode de reproduction asexuée des bactéries : 1 → 2 → 4 → 8..." },
+    { q:"Pourquoi arrêter un traitement antibiotique trop tôt est dangereux ?", answers:["Les effets secondaires augmentent","Les bactéries les plus résistantes survivent et prolifèrent","L'antibiotique devient toxique","Le corps s'immunise contre l'antibiotique"], correct:1, explanation:"En arrêtant trop tôt, les bactéries les plus résistantes (non éliminées) survivent, se multiplient et transmettent leur résistance." }
+  ],
+  difficile: [
+    { q:"Par quel mécanisme de transfert horizontal une bactérie absorbe-t-elle de l'ADN libre dans l'environnement ?", answers:["Conjugaison","Transduction","Transformation","Traduction"], correct:2, explanation:"La transformation : la bactérie absorbe de l'ADN libre présent dans l'environnement (ex : d'une bactérie morte). Conjugaison = contact direct via pilus. Transduction = via bactériophage." },
+    { q:"Qu'est-ce qu'un plasmide dans le contexte de l'antibiorésistance ?", answers:["Un type d'antibiotique","Un fragment d'ADN circulaire extrachromosomique transportant des gènes de résistance","Une structure de la paroi bactérienne","Un virus bactériophage"], correct:1, explanation:"Les plasmides sont des fragments d'ADN circulaires qui peuvent transporter plusieurs gènes de résistance simultanément, favorisant les BMR." },
+    { q:"Quel est le mécanisme d'action des β-lactamines au niveau moléculaire ?", answers:["Inhibition de l'ARN polymérase","Fixation sur les protéines de liaison à la pénicilline (PLP) bloquant la synthèse du peptidoglycane","Inhibition de la synthèse protéique au ribosome 50S","Perturbation de la membrane cytoplasmique"], correct:1, explanation:"Les β-lactamines se lient aux PLP (transpeptidases), enzymes clés de la synthèse du peptidoglycane, empêchant la reconstruction de la paroi." },
+    { q:"Qu'est-ce qu'une entérobactérie productrice de carbapénémase (EPC) ?", answers:["Une bactérie intestinale sensible à tous les antibiotiques","Une bactérie résistante aux carbapénèmes (antibiotiques de dernier recours) via une enzyme spécifique","Un champignon produisant des antibiotiques","Une bactérie ne vivant que dans les intestins"], correct:1, explanation:"Les EPC produisent des carbapénémases qui détruisent les carbapénèmes, nos antibiotiques de dernier recours. Leur émergence est une menace critique mondiale." },
+    { q:"Le concept 'One Health' repose sur quelle observation fondamentale ?", answers:["Les humains sont plus importants que les animaux","La santé humaine, animale et environnementale sont interconnectées et indissociables","Les antibiotiques vétérinaires sont différents des antibiotiques humains","L'OMS doit contrôler tous les pays"], correct:1, explanation:"One Health reconnaît que 60% des maladies infectieuses humaines sont zoonotiques (origine animale) et que l'environnement est un réservoir de gènes de résistance." },
+    { q:"Pourquoi les mutations conférant une résistance n'ont-elles pas besoin d'être induites par l'antibiotique ?", answers:["Parce que les antibiotiques guident l'évolution","Parce que des mutations aléatoires préexistent déjà dans la population ; l'antibiotique ne fait que sélectionner celles qui confèrent un avantage","Parce que les bactéries détectent l'antibiotique","Parce que les gènes de résistance viennent toujours d'autres espèces"], correct:1, explanation:"C'est le principe fondamental de la sélection naturelle darwinienne : la variabilité génétique préexiste. L'antibiotique = pression de sélection qui favorise les déjà-résistants." },
+    { q:"Quelle famille d'antibiotiques cible les ribosomes 30S des bactéries ?", answers:["β-lactamines","Macrolides","Fluoroquinolones","Aminosides et tétracyclines"], correct:3, explanation:"Les aminosides et tétracyclines ciblent le ribosome 30S. Les macrolides ciblent le 50S. Les fluoroquinolones ciblent l'ADN gyrase. Les β-lactamines ciblent la paroi." },
+    { q:"Qu'est-ce qui explique que le SARM est apparu dès 1961, l'année même où la méticilline a été introduite ?", answers:["Pure coïncidence","Des mutations conférant la résistance préexistaient dans certaines souches de S. aureus avant même l'utilisation de la méticilline","La méticilline était de mauvaise qualité","Les chercheurs ont fait une erreur de datation"], correct:1, explanation:"Illustration parfaite de la sélection naturelle : des S. aureus portant déjà le gène mecA (SARM) préexistaient. L'introduction massive de méticilline a sélectionné et amplifié ces souches." },
+    { q:"Pourquoi l'hôpital est-il un environnement particulièrement propice à la sélection de bactéries résistantes ?", answers:["Parce que les patients y sont en bonne santé","Combinaison de forte utilisation d'antibiotiques, patients immunodéprimés et transmission croisée intensive","Parce que les hôpitaux sont plus chauds","Parce que les médecins ne se lavent pas les mains"], correct:1, explanation:"L'hôpital concentre les 3 facteurs de sélection : pression antibiotique intense, hôtes fragilisés (moins de compétition avec la flore normale) et densité de patients facilitant la transmission." },
+    { q:"Quel inhibiteur de β-lactamase est associé à l'amoxicilline dans l'Augmentin® ?", answers:["Méticilline","Acide clavulanique","Vancomycine","Tazobactam"], correct:1, explanation:"L'amoxicilline + acide clavulanique (Augmentin®) : l'acide clavulanique inhibe les β-lactamases, restaurant l'efficacité de l'amoxicilline contre les bactéries résistantes." }
+  ]
+};
+
+const DIFFICULTY_CONFIG = {
+  facile:    { label:'FACILE',    color:'#00ff88', emoji:'🟢', bonus:10, desc:'Questions de base — idéal pour commencer' },
+  moyen:     { label:'MOYEN',     color:'#ffd60a', emoji:'🟡', bonus:20, desc:'Mécanismes et données chiffrées' },
+  difficile: { label:'DIFFICILE', color:'#ff4d6d', emoji:'🔴', bonus:30, desc:'Biologie moléculaire et enjeux avancés' }
+};
+
+const Quiz = {
+  questions:[], current:0, score:0, answered:false,
+  difficulty: null, wheelSpinning: false,
+
+  start() {
+    this.current=0; this.score=0; this.answered=false; this.difficulty=null;
+    this.showWheel();
+  },
+
+  showWheel() {
+    const container = document.getElementById('quiz-container');
+    container.innerHTML = `
+      <div id="wheel-screen" style="display:flex;flex-direction:column;align-items:center;gap:18px;padding:10px 0;">
+        <div style="font-family:var(--fd);font-size:clamp(13px,2vw,17px);color:var(--blue);letter-spacing:2px;text-align:center">
+          🎰 TIRAGE AU SORT DE LA DIFFICULTÉ
+        </div>
+        <div style="font-size:clamp(11px,1.6vw,13px);color:var(--dim);text-align:center">La roue choisit ton niveau de défi !</div>
+        <div style="position:relative;width:clamp(220px,40vw,300px);height:clamp(220px,40vw,300px)">
+          <canvas id="wheel-canvas" width="300" height="300" style="width:100%;height:100%"></canvas>
+          <div id="wheel-pointer" style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);font-size:28px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.8))">▼</div>
+        </div>
+        <button id="spin-btn" class="btn-primary" style="font-size:clamp(12px,2vw,15px);padding:12px 32px;" onclick="Quiz.spinWheel()">
+          🎲 LANCER LA ROUE
+        </button>
+        <div id="wheel-result" style="font-size:clamp(13px,2vw,16px);color:var(--green);font-family:var(--fd);min-height:40px;text-align:center;letter-spacing:1px"></div>
+      </div>`;
+    document.getElementById('question-area').innerHTML='';
+    document.getElementById('answer-area').innerHTML='';
+    document.getElementById('feedback-area').innerHTML='';
+    document.getElementById('quiz-progress-text').textContent='Tirage de la difficulté...';
+    document.getElementById('quiz-progress-bar').style.width='0%';
+    this.drawWheel(0);
+  },
+
+  drawWheel(angle) {
+    const canvas = document.getElementById('wheel-canvas');
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const cx=150, cy=150, r=130;
+    const segments = [
+      {key:'facile',   label:'FACILE',    color:'#00cc6a', arc: Math.PI*2/3 },
+      {key:'moyen',    label:'MOYEN',     color:'#e6c200', arc: Math.PI*2/3 },
+      {key:'difficile',label:'DIFFICILE', color:'#cc3344', arc: Math.PI*2/3 },
+    ];
+    ctx.clearRect(0,0,300,300);
+
+    // Outer glow ring
+    ctx.save();
+    ctx.shadowColor='rgba(0,207,255,0.35)'; ctx.shadowBlur=18;
+    ctx.beginPath(); ctx.arc(cx,cy,r+6,0,Math.PI*2);
+    ctx.strokeStyle='rgba(0,207,255,0.4)'; ctx.lineWidth=4; ctx.stroke();
+    ctx.restore();
+
+    let a = angle - Math.PI/2; // pointer at top
+    segments.forEach(seg => {
+      // Segment fill
+      ctx.beginPath(); ctx.moveTo(cx,cy);
+      ctx.arc(cx,cy,r,a,a+seg.arc); ctx.closePath();
+      ctx.fillStyle = seg.color; ctx.fill();
+      ctx.strokeStyle='rgba(0,0,0,0.3)'; ctx.lineWidth=2; ctx.stroke();
+
+      // Label
+      const mid = a + seg.arc/2;
+      ctx.save();
+      ctx.translate(cx+Math.cos(mid)*r*.62, cy+Math.sin(mid)*r*.62);
+      ctx.rotate(mid+Math.PI/2);
+      ctx.fillStyle='#fff'; ctx.font='bold 13px Orbitron';
+      ctx.textAlign='center'; ctx.shadowColor='rgba(0,0,0,.6)'; ctx.shadowBlur=4;
+      ctx.fillText(seg.label, 0, 0);
+      ctx.restore();
+
+      // Emoji
+      ctx.save();
+      ctx.translate(cx+Math.cos(mid)*r*.85, cy+Math.sin(mid)*r*.85);
+      ctx.font='18px serif';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(DIFFICULTY_CONFIG[seg.key].emoji, 0, 0);
+      ctx.restore();
+
+      a += seg.arc;
+    });
+
+    // Center circle
+    ctx.beginPath(); ctx.arc(cx,cy,28,0,Math.PI*2);
+    const cg = ctx.createRadialGradient(cx,cy,0,cx,cy,28);
+    cg.addColorStop(0,'#1a3060'); cg.addColorStop(1,'#060b1a');
+    ctx.fillStyle=cg; ctx.fill();
+    ctx.strokeStyle='rgba(0,207,255,0.5)'; ctx.lineWidth=2.5; ctx.stroke();
+    ctx.fillStyle='#00cfff'; ctx.font='bold 11px Orbitron';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('GO!', cx, cy);
+  },
+
+  spinWheel() {
+    if(this.wheelSpinning) return;
+    this.wheelSpinning = true;
+    document.getElementById('spin-btn').disabled=true;
+    document.getElementById('wheel-result').textContent='';
+
+    const difficulties = ['facile','moyen','difficile'];
+    const chosen = difficulties[Math.floor(Math.random()*3)];
+    // Each segment = 120° = 2π/3 rad
+    // Segment positions: facile=0°, moyen=120°, difficile=240° (pointer at top = -90°)
+    const segStart = { facile: 0, moyen: Math.PI*2/3, difficile: Math.PI*4/3 };
+    const targetAngle = segStart[chosen] + Math.PI/3; // center of segment
+
+    // Spin 5 full rotations + land on chosen segment
+    const totalSpin = Math.PI*2*5 + targetAngle;
+    let current = 0;
+    const duration = 3200;
+    const start = performance.now();
+
+    const easeOut = t => 1 - Math.pow(1-t, 4);
+
+    const animate = (now) => {
+      const elapsed = now - start;
+      const t = Math.min(elapsed/duration, 1);
+      current = totalSpin * easeOut(t);
+      this.drawWheel(current);
+      if(t < 1) { requestAnimationFrame(animate); }
+      else {
+        this.wheelSpinning = false;
+        this.difficulty = chosen;
+        const cfg = DIFFICULTY_CONFIG[chosen];
+        document.getElementById('wheel-result').innerHTML =
+          `${cfg.emoji} <strong style="color:${cfg.color}">${cfg.label}</strong> — ${cfg.desc}`;
+        document.getElementById('spin-btn').textContent='▶ DÉMARRER LE QUIZ';
+        document.getElementById('spin-btn').disabled=false;
+        document.getElementById('spin-btn').onclick = () => Quiz.startWithDifficulty(chosen);
+      }
+    };
+    requestAnimationFrame(animate);
+  },
+
+  startWithDifficulty(diff) {
+    this.difficulty = diff;
+    // Pick 10 random questions from the bank
+    const bank = [...QUIZ_BANKS[diff]];
+    for(let i=bank.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [bank[i],bank[j]]=[bank[j],bank[i]]; }
+    this.questions = bank.slice(0,10);
+    this.current=0; this.score=0; this.answered=false;
+
+    const cfg = DIFFICULTY_CONFIG[diff];
+    // Replace container with quiz UI
+    const container = document.getElementById('quiz-container');
+    container.innerHTML = `
+      <div id="difficulty-badge" style="font-family:var(--fd);font-size:clamp(10px,1.4vw,12px);padding:4px 16px;border-radius:20px;background:${cfg.color}22;border:1px solid ${cfg.color};color:${cfg.color};letter-spacing:2px">
+        ${cfg.emoji} MODE ${cfg.label} — Bonus ${cfg.bonus} pts/bonne réponse
+      </div>
+      <div id="question-area2" style="font-family:var(--fd);font-size:clamp(14px,2.5vw,20px);font-weight:700;text-align:center;color:var(--text);line-height:1.4;padding:0 4px"></div>
+      <div id="answer-area2" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(8px,1.5vw,12px);width:100%"></div>
+      <div id="feedback-area2" style="background:rgba(0,207,255,.06);border:1px solid var(--border);border-radius:10px;padding:clamp(10px,2vh,14px) clamp(12px,2vw,18px);font-size:clamp(12px,1.7vw,14px);color:var(--text);line-height:1.7;width:100%;min-height:52px;display:none"></div>`;
+
+    document.getElementById('quiz-progress-text').textContent=`Question 1 / ${this.questions.length} — ${cfg.label}`;
+    document.getElementById('quiz-progress-bar').style.width='0%';
+    this.showQ();
+  },
+
   showQ() {
     const q=this.questions[this.current]; this.answered=false;
-    document.getElementById('question-area').textContent=q.q;
-    document.getElementById('feedback-area').innerHTML='';
-    document.getElementById('feedback-area').style.display='none';
-    document.getElementById('quiz-progress-text').textContent=`Question ${this.current+1} / ${this.questions.length}`;
+    const cfg = DIFFICULTY_CONFIG[this.difficulty];
+    document.getElementById('question-area2').textContent=q.q;
+    document.getElementById('feedback-area2').style.display='none';
+    document.getElementById('quiz-progress-text').textContent=`Question ${this.current+1} / ${this.questions.length} — ${cfg.emoji} ${cfg.label}`;
     document.getElementById('quiz-progress-bar').style.width=((this.current/this.questions.length)*100)+'%';
-    const aa=document.getElementById('answer-area'); aa.innerHTML='';
-    q.answers.forEach((a,i)=>{ const btn=document.createElement('button'); btn.className='answer-btn'; btn.textContent=a; btn.onclick=()=>this.answer(i); aa.appendChild(btn); });
+    const aa=document.getElementById('answer-area2'); aa.innerHTML='';
+    q.answers.forEach((a,i)=>{
+      const btn=document.createElement('button');
+      btn.className='answer-btn'; btn.textContent=a;
+      btn.onclick=()=>this.answer(i); aa.appendChild(btn);
+    });
   },
+
   answer(idx) {
     if(this.answered)return; this.answered=true;
     const q=this.questions[this.current];
-    document.querySelectorAll('.answer-btn').forEach(b=>b.disabled=true);
-    const fb=document.getElementById('feedback-area'); fb.style.display='';
-    if(idx===q.correct){ document.querySelectorAll('.answer-btn')[idx].classList.add('correct'); this.score++; Game.addScore(20); fb.innerHTML=`✅ <strong>Correct !</strong> ${q.explanation}`; }
-    else { document.querySelectorAll('.answer-btn')[idx].classList.add('wrong'); document.querySelectorAll('.answer-btn')[q.correct].classList.add('correct'); fb.innerHTML=`❌ <strong>Incorrect.</strong> ${q.explanation}`; }
-    setTimeout(()=>{ this.current++; if(this.current<this.questions.length) this.showQ(); else { document.getElementById('quiz-progress-bar').style.width='100%'; setTimeout(()=>Game.showEnd(this.score,this.questions.length),600); } }, 2800);
+    const cfg=DIFFICULTY_CONFIG[this.difficulty];
+    const btns=document.querySelectorAll('#answer-area2 .answer-btn');
+    btns.forEach(b=>b.disabled=true);
+    const fb=document.getElementById('feedback-area2'); fb.style.display='';
+    if(idx===q.correct){
+      btns[idx].classList.add('correct'); this.score++; Game.addScore(cfg.bonus);
+      fb.innerHTML=`✅ <strong>Correct !</strong> ${q.explanation}`;
+    } else {
+      btns[idx].classList.add('wrong'); btns[q.correct].classList.add('correct');
+      fb.innerHTML=`❌ <strong>Incorrect.</strong> ${q.explanation}`;
+    }
+    setTimeout(()=>{
+      this.current++;
+      if(this.current<this.questions.length) this.showQ();
+      else {
+        document.getElementById('quiz-progress-bar').style.width='100%';
+        setTimeout(()=>Game.showEnd(this.score,this.questions.length,this.difficulty),600);
+      }
+    }, 2800);
   }
 };
