@@ -437,6 +437,16 @@ body {
 #quiz-progress-text { font-size: clamp(10px,1.5vw,12px); color: var(--dim); white-space: nowrap; }
 
 /* ══════════════════════════════════════════
+   WHEEL (quiz difficulty selector)
+══════════════════════════════════════════ */
+#wheel-screen { width: 100%; }
+#wheel-canvas { display: block; }
+#spin-btn { margin-top: 4px; }
+#wheel-result strong { font-weight: 900; }
+#answer-area2 { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(8px,1.5vw,12px); width: 100%; }
+@media (max-width: 520px) { #answer-area2 { grid-template-columns: 1fr; } }
+
+/* ══════════════════════════════════════════
    END
 ══════════════════════════════════════════ */
 #screen-end {
