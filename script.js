@@ -929,7 +929,7 @@ const Quiz = {
     const chosen = difficulties[Math.floor(Math.random()*3)];
     // Each segment = 120° = 2π/3 rad
     // Segment positions: facile=0°, moyen=120°, difficile=240° (pointer at top = -90°)
-    const segStart = { facile: 0, moyen: Math.PI*2/3, difficile: Math.PI*4/3 };
+    const segStart = { facile: Math.PI*4/3, moyen: Math.PI*2/3, difficile: 0 };
     const targetAngle = segStart[chosen] + Math.PI/3; // center of segment
 
     // Spin 5 full rotations + land on chosen segment
