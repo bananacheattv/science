@@ -1,0 +1,22 @@
+{
+  "_readme": "Fichier de données des schémas BactéroQuest. Ajoutez vos images en base64 ou URL dans le champ 'image' de chaque terme.",
+  "unicellulaire": { "image": "" },
+  "paroi":         { "image": "" },
+  "coques":        { "image": "" },
+  "bacilles":      { "image": "" },
+  "scissiparite":  { "image": "" },
+  "exponentielle": { "image": "" },
+  "mutation":      { "image": "" },
+  "penicilline":   { "image": "" },
+  "bacteriostatique": { "image": "" },
+  "bactericide":   { "image": "" },
+  "betalactamines":{ "image": "" },
+  "antibiogramme": { "image": "" },
+  "zoneInhibition":{ "image": "" },
+  "resistant":     { "image": "" },
+  "pressionSelection": { "image": "" },
+  "cibleAb":       { "image": "" },
+  "betalactamase": { "image": "" },
+  "transfertH":    { "image": "" },
+  "sarm":          { "image": "" }
+}
