@@ -1,6 +1,6 @@
 {
   "_readme": "Fichier de données des schémas BactéroQuest. Ajoutez vos images en base64 ou URL dans le champ 'image' de chaque terme.",
-  "unicellulaire": { "image": "schemas/organismeunicelullaire.jpg" },
+  "unicellulaire": { "image": "https://www.aquaportail.com/pictures1103/bacterie.jpg" },
   "paroi":         { "image": "schemas/" },
   "coques":        { "image": "schemas/structure_dune_bacterie.jpg" },
   "bacilles":      { "image": "schemas/1315256-Organisation_dune_bactérie.jpg" },
