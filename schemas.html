@@ -56,12 +56,12 @@
 </div>
 
 <div class="info-box">
-  📌 <strong>Comment ça marche :</strong> clique sur une carte pour importer une image (PNG, JPG, SVG, GIF). Elle s'affichera dans la fenêtre du terme cliquable (textes verts) directement dans le jeu. Les images sont stockées localement dans le navigateur.<br>
-  💡 <strong>Conseil :</strong> utilise des schémas clairs, fond blanc ou transparent, résolution ≥ 400px de large. SVG recommandé pour la netteté sur écran tactile.<br>
-  ⚠️ Les données sont sauvegardées dans <em>localStorage</em> du navigateur — les images restent tant qu'on ne vide pas le cache.
+  📌 <strong>Comment ça marche :</strong> clique sur une carte pour importer une image (PNG, JPG, SVG, GIF). Elle s'affichera dans la fenêtre du terme cliquable directement dans le jeu.<br>
+  💾 <strong>Sauvegarder :</strong> clique <em>"Générer JSON"</em> → copie ou télécharge le fichier → commit <code>schemas_data.json</code> dans ton dépôt GitHub → GitHub Pages déploie automatiquement !<br>
+  🌐 Les images sont stockées <em>dans le fichier <code>schemas_data.json</code></em> de ton repo GitHub — accessibles sur tous les appareils.
 </div>
 
-<button class="btn btn-save-all" onclick="saveAll()">💾 SAUVEGARDER TOUS LES CHANGEMENTS</button>
+<button class="btn btn-save-all" onclick="saveAll()">📋 GÉNÉRER LE JSON (GITHUB)</button>
 <div id="save-status" style="margin-top:8px;font-size:12px;min-height:16px"></div>
 
 <br><br>
@@ -94,14 +94,51 @@ const TERM_LABELS = {
 let images = {};
 
 function loadSaved() {
+
+<script>
+const TERM_LABELS = {
+  unicellulaire:  { title:'🦠 Organisme Unicellulaire',      hint:'Comparaison humain vs bactérie' },
+  paroi:          { title:'🏰 Paroi Bactérienne',             hint:'Structure couche peptidoglycane' },
+  coques:         { title:'⚪ Les Coques',                    hint:'Formes : mono, diplo, strepto, staphylo' },
+  bacilles:       { title:'🔴 Les Bacilles',                  hint:'Formes bâtonnet, flagelles, spores' },
+  scissiparite:   { title:'✂️ Scissiparité',                  hint:'Schéma division binaire : 1→2→4' },
+  exponentielle:  { title:'📈 Croissance Exponentielle',      hint:'Courbe ou tableau de croissance' },
+  mutation:       { title:'🧬 Mutation Génétique',            hint:'Séquence ADN avant/après mutation' },
+  penicilline:    { title:'💊 La Pénicilline',                hint:'Moisissure Penicillium / structure' },
+  bacteriostatique:{ title:'🛡 Bactériostatique',             hint:'Schéma bactérie bloquée' },
+  bactericide:    { title:'⚔️ Bactéricide',                   hint:'Schéma bactérie détruite' },
+  betalactamines: { title:'🔬 β-Lactamines',                  hint:'Cycle β-lactame, structure moléculaire' },
+  antibiogramme:  { title:'🧫 Antibiogramme',                 hint:'Photo boîte de Pétri réelle' },
+  zoneInhibition: { title:'⭕ Zone d\'Inhibition',            hint:'Mesure du diamètre, catégories S/I/R' },
+  resistant:      { title:'🔴 Résistance Bactérienne',        hint:'Mécanismes : pompe, enzyme, mutation' },
+  pressionSelection:{ title:'🎯 Pression de Sélection',       hint:'Courbe : avant/après antibiotique' },
+  cibleAb:        { title:'🎯 Cibles des Antibiotiques',      hint:'Tableau ou schéma des cibles' },
+  betalactamase:  { title:'🧪 β-Lactamases',                  hint:'Enzyme découpant le cycle β-lactame' },
+  transfertH:     { title:'🔄 Transfert Horizontal',          hint:'3 mécanismes : conjugaison/transfo/transduction' },
+  sarm:           { title:'⚠️ Le SARM',                       hint:'Frise chronologique résistances' },
+};
+
+// ─── Images chargées depuis schemas_data.json ───
+let images = {};
+
+async function loadFromGitHub() {
   try {
-    const saved = JSON.parse(localStorage.getItem('bq_terms_override') || '{}');
-    for(const k in saved) if(saved[k].image) images[k] = saved[k].image;
-  } catch(e){}
+    const r = await fetch('schemas_data.json?v=' + Date.now());
+    if (!r.ok) throw new Error('Fichier introuvable');
+    const data = await r.json();
+    for (const k in data) {
+      if (data[k]?.image) images[k] = data[k].image;
+    }
+    document.getElementById('load-status').textContent = '✅ Schémas chargés depuis GitHub';
+    document.getElementById('load-status').style.color = 'var(--green)';
+  } catch(e) {
+    document.getElementById('load-status').textContent = '⚠️ schemas_data.json non trouvé — aucune image chargée';
+    document.getElementById('load-status').style.color = 'var(--yellow)';
+  }
+  buildGrid();
 }
 
 function buildGrid() {
-  loadSaved();
   const grid = document.getElementById('terms-grid');
   grid.innerHTML = '';
   for(const [key, meta] of Object.entries(TERM_LABELS)) {
@@ -141,11 +178,9 @@ function handleFile(key, input) {
   reader.onload = e => {
     images[key] = e.target.result;
     document.getElementById('st-'+key).className='status ok';
-    document.getElementById('st-'+key).textContent='✅ Image chargée — sauvegarde pour appliquer';
-    // Update preview
+    document.getElementById('st-'+key).textContent='✅ Image chargée — clique "Générer JSON" pour sauvegarder';
     const prev = document.getElementById('prev-'+key);
     prev.innerHTML = `<img src="${e.target.result}" alt="${key}" id="img-${key}"><div class="overlay"><span class="overlay-text">📂 Changer</span></div>`;
-    // Add remove button if not present
     const btnRow = prev.nextElementSibling.nextElementSibling;
     if(!btnRow.querySelector('.btn-remove')) {
       const rem = document.createElement('button');
@@ -159,37 +194,58 @@ function handleFile(key, input) {
 
 function removeImage(key) {
   delete images[key];
-  document.getElementById('st-'+key).className='status';
-  document.getElementById('st-'+key).textContent='Image supprimée — sauvegarde pour appliquer';
   buildGrid();
 }
 
+// ─── Génère le JSON à committer sur GitHub ───
 function saveAll() {
-  try {
-    let saved = {};
-    try { saved = JSON.parse(localStorage.getItem('bq_terms_override') || '{}'); } catch(e){}
-    // Update image fields
-    for(const k in TERM_LABELS) {
-      if(images[k]) {
-        if(!saved[k]) saved[k]={};
-        saved[k].image = images[k];
-      } else if(saved[k]) {
-        delete saved[k].image;
-      }
-    }
-    localStorage.setItem('bq_terms_override', JSON.stringify(saved));
-    const st = document.getElementById('save-status');
-    st.style.color='var(--green)';
-    const n = Object.keys(images).length;
-    st.textContent = `✅ Sauvegardé ! ${n} image(s) enregistrée(s). Ouvre le jeu pour voir les changements.`;
-    setTimeout(()=>{ st.textContent=''; },4000);
-  } catch(e) {
-    document.getElementById('save-status').style.color='var(--red)';
-    document.getElementById('save-status').textContent = '❌ Erreur : ' + e.message;
+  const output = {};
+  for (const k in TERM_LABELS) {
+    output[k] = { image: images[k] || '' };
   }
+  const json = JSON.stringify(output, null, 2);
+
+  // Affiche dans une modale
+  let modal = document.getElementById('json-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'json-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:16px';
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `
+    <div style="background:#0d1b35;border:1px solid var(--border);border-radius:12px;padding:24px;max-width:700px;width:100%;max-height:80vh;display:flex;flex-direction:column;gap:12px">
+      <div style="font-family:var(--fd);color:var(--blue);font-size:14px;letter-spacing:2px">📋 SCHEMAS_DATA.JSON — À COMMITTER SUR GITHUB</div>
+      <div style="font-size:12px;color:var(--dim);line-height:1.7">
+        1. Copie ce JSON<br>
+        2. Ouvre <strong style="color:var(--text)">schemas_data.json</strong> dans ton dépôt GitHub<br>
+        3. Remplace son contenu par ce JSON et commit<br>
+        4. GitHub Pages déploie → les schémas sont en ligne !
+      </div>
+      <textarea id="json-output" style="background:#060b1a;color:#00ff88;border:1px solid var(--border);border-radius:8px;padding:12px;font-size:11px;font-family:monospace;flex:1;min-height:280px;resize:vertical">${json}</textarea>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-upload" onclick="document.getElementById('json-output').select();document.execCommand('copy');this.textContent='✅ Copié !'">📋 Copier</button>
+        <button class="btn btn-upload" onclick="downloadJSON('${encodeURIComponent(json)}')">⬇️ Télécharger schemas_data.json</button>
+        <button class="btn btn-remove" onclick="document.getElementById('json-modal').remove()">✕ Fermer</button>
+      </div>
+    </div>`;
+  document.getElementById('save-status').style.color = 'var(--green)';
+  document.getElementById('save-status').textContent = `JSON généré — ${Object.keys(images).length} image(s).`;
+  setTimeout(() => { document.getElementById('save-status').textContent = ''; }, 4000);
 }
 
-buildGrid();
+function downloadJSON(encodedJson) {
+  const blob = new Blob([decodeURIComponent(encodedJson)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'schemas_data.json';
+  a.click();
+}
+
+// ─── Démarrage ───
+document.getElementById('save-status').insertAdjacentHTML('beforebegin',
+  '<div id="load-status" style="font-size:12px;margin-bottom:8px;color:var(--dim)">Chargement depuis GitHub...</div>');
+loadFromGitHub();
 </script>
 
 </body>
