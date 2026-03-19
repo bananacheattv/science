@@ -216,27 +216,50 @@ const TERMS_DEFAULT = {
   }
 };
 
-// Fusionner avec les overrides admin (localStorage)
-function getTerms() {
-  try {
-    const overrides = JSON.parse(localStorage.getItem('bq_terms_override') || '{}');
-    const merged = {};
-    for (const k in TERMS_DEFAULT) {
-      merged[k] = { ...TERMS_DEFAULT[k], ...overrides[k] };
-    }
-    // Ajouter les nouveaux termes créés dans l'admin
-    for (const k in overrides) {
-      if (!merged[k]) merged[k] = overrides[k];
-    }
-    return merged;
-  } catch(e) { return TERMS_DEFAULT; }
+// ══════════════════════════════════════════════════════════════
+// SCHEMAS — chargement depuis schemas_data.json (GitHub)
+// ══════════════════════════════════════════════════════════════
+let _schemasCache = null;
+let _schemasLoading = null;
+
+async function loadSchemasData() {
+  if (_schemasCache) return _schemasCache;
+  if (_schemasLoading) return _schemasLoading;
+  _schemasLoading = fetch('schemas_data.json?v=' + Date.now())
+    .then(r => r.ok ? r.json() : {})
+    .catch(() => {})
+    .then(data => { _schemasCache = data || {}; return _schemasCache; });
+  return _schemasLoading;
 }
 
-function openTerm(key) {
-  const terms = getTerms();
+// Fusionner TERMS_DEFAULT + images depuis schemas_data.json
+async function getTermsAsync() {
+  const schemas = await loadSchemasData();
+  const merged = {};
+  for (const k in TERMS_DEFAULT) {
+    merged[k] = { ...TERMS_DEFAULT[k] };
+    if (schemas[k]?.image) merged[k].image = schemas[k].image;
+  }
+  return merged;
+}
+
+// Version synchrone (fallback sans images) — conservée pour compatibilité
+function getTerms() {
+  const merged = {};
+  for (const k in TERMS_DEFAULT) {
+    merged[k] = { ...TERMS_DEFAULT[k] };
+    if (_schemasCache && _schemasCache[k]?.image) merged[k].image = _schemasCache[k].image;
+  }
+  return merged;
+}
+
+// Pré-charge les schémas au démarrage de la page
+document.addEventListener('DOMContentLoaded', () => { loadSchemasData(); });
+
+async function openTerm(key) {
+  const terms = await getTermsAsync();
   const term = terms[key];
   if (!term) return;
-  // Support image field: term.image = URL or base64 data URI
   let imgHtml = '';
   if (term.image) {
     imgHtml = `<div style="margin-top:10px"><img src="${term.image}" alt="Schéma : ${term.title}" class="schema-img" onerror="this.style.display='none'" /></div>`;
@@ -927,13 +950,17 @@ const Quiz = {
 
     const difficulties = ['facile','moyen','difficile'];
     const chosen = difficulties[Math.floor(Math.random()*3)];
-    // Each segment = 120° = 2π/3 rad
-    // Segment positions: facile=0°, moyen=120°, difficile=240° (pointer at top = -90°)
-    const segStart = { facile: Math.PI*4/3, moyen: Math.PI*2/3, difficile: 0 };
-    const targetAngle = segStart[chosen] + Math.PI/3; // center of segment
+    // Segments dessinés depuis angle - Math.PI/2 (pointer au top) :
+    // facile  = 0  à 2π/3  → centre à π/3
+    // moyen   = 2π/3 à 4π/3 → centre à π
+    // difficile = 4π/3 à 2π → centre à 5π/3
+    // Pour que le pointeur (top) tombe sur le bon segment,
+    // on ajoute Math.PI/2 car drawWheel démarre à angle - Math.PI/2
+    const segCenter = { facile: Math.PI/3, moyen: Math.PI, difficile: Math.PI*5/3 };
+    const targetAngle = segCenter[chosen] + Math.PI/2; // compense le offset du dessin
 
     // Spin 5 full rotations + land on chosen segment
-    const totalSpin = Math.PI*2*5 + targetAngle;
+    const totalSpin = Math.PI*2*5 + (Math.PI*2 - (targetAngle % (Math.PI*2)));
     let current = 0;
     const duration = 3200;
     const start = performance.now();
